@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Стильное меню с вкладками</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --gold1:#ffd700;
+    --gold2:#d0aa5b;
+    --panel-bg: linear-gradient(180deg,#4a4a4a 0%,#3a3a3a 100%);
+    --glass: rgba(30,30,30,0.95);
+  }
+  html,body{height:100%;margin:0;font-family:'Poppins',sans-serif;background:linear-gradient(180deg,#3a3a3a 0%,#2c2c2c 100%);color:#f5f5f5;}
+  .app { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
+  .tabs { flex:1; padding:12px; box-sizing:border-box; padding-bottom:140px; overflow:auto; -webkit-overflow-scrolling:touch; }
+
+  .tab { display:none; }
+  .tab.active { display:block; }
+
+  /* карточки (премиум стиль) */
+  .section-box{
+    background: var(--panel-bg);
+    border:1px solid rgba(255,255,255,0.04);
+    border-radius:18px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5), inset 0 0 10px rgba(255,255,255,0.03);
+    padding:18px;
+    max-width:420px;
+    margin:14px auto;
+    position:relative;
+  }
+  h3{ margin:0 0 10px; color:var(--gold2); font-size:20px; text-align:center; font-weight:600; letter-spacing:0.3px; }
+  p { margin:0 0 12px; color:#d9d9d9; text-align:center; font-size:14px; }
+
+  /* promo */
+  .promo-input{ display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap; }
+  .promo-input input{
+    width:180px;padding:12px;border-radius:10px;border:1px solid #777;background:#2f2f2f;color:#f5f5f5;text-align:center;outline:none;
+  }
+  .promo-input button{
+    background:linear-gradient(180deg,var(--gold2),#b4873e); border:none;color:#fff;padding:11px 16px;border-radius:10px;font-weight:600;cursor:pointer;
+    box-shadow:0 6px 18px rgba(180,140,60,0.15);
+  }
+  .promo-message{ text-align:center;margin-top:10px;font-weight:600; display:none; }
+
+
+
+  /* ads */
+  #ads-progress-bar{
+    width:100%; height:14px; background:#2f2f2f; border-radius:8px; overflow:hidden; margin-top:10px;
+  }
+  #ads-progress-bar-inner{
+    width:0%; height:100%; background:linear-gradient(90deg,var(--gold1),var(--gold2)); border-radius:8px; position:relative; overflow:hidden;
+  }
+  #ads-progress-bar-inner::before{ content:''; position:absolute; top:0; left:-50%; width:50%; height:100%; background:linear-gradient(120deg, rgba(255,255,255,0.35), rgba(255,255,255,0.07), rgba(255,255,255,0.35)); animation:shine 2s linear infinite; }
+  @keyframes shine{ 0%{left:-50%}100%{left:100%} }
+
+  .watch-btn{ width:100%; padding:12px 0; border-radius:12px; border:none; font-weight:600; cursor:pointer; color:#fff; background:linear-gradient(180deg,var(--gold1),var(--gold2)); box-shadow:0 6px 20px rgba(255,215,0,0.15); }
+
+  /* balance row */
+  .balance-top{ display:flex; justify-content:center; gap:14px; align-items:center; margin:6px 0 6px; }
+  .balance-top img{ width:28px;height:28px; display:inline-block; filter:drop-shadow(0 4px 8px rgba(0,0,0,0.6)); }
+  .balance-top .bal{ font-weight:700;color:var(--gold1); font-size:15px; min-width:36px; text-align:center; }
+
+  /* riddle */
+  .riddle-box{ background: linear-gradient(145deg,#ffd70022,#d0aa5b22); border-radius:16px; padding:14px; box-shadow:0 6px 18px rgba(208,170,91,0.06); color:var(--gold1); font-weight:600; text-align:center; }
+  .riddle-input{ display:flex; justify-content:center; gap:10px; margin-top:10px; }
+  .riddle-input input{ padding:10px;border-radius:10px;border:1px solid #777;background:#2f2f2f;color:#fff;text-align:center; width:180px; }
+  .riddle-input button{ padding:10px 14px;border-radius:10px;border:none;background:linear-gradient(180deg,var(--gold1),var(--gold2));color:#111;font-weight:700;cursor:pointer; }
+
+  /* coins animation */
+  .fall-coin{ position:fixed; pointer-events:auto; z-index:9999; font-size:26px; user-select:none; text-shadow:0 0 8px rgba(255,215,0,0.6); }
+  .fall-coin.ton{ text-shadow:0 0 8px rgba(180,180,180,0.6); }
+  .fall-coin.usdt{ text-shadow:0 0 8px rgba(0,200,100,0.6); }
+
+  /* tabs bottom */
+  .tab-buttons{
+    position:fixed; left:0; bottom:0; width:100%; display:flex; justify-content:space-around; align-items:center;
+    background:var(--glass); padding:10px 8px; box-shadow:0 -8px 30px rgba(0,0,0,0.6); border-radius:16px 16px 0 0; z-index:200;
+  }
+  .tab-btn{ flex:1; background:none;border:none;color:var(--gold2); cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px; padding:6px 6px; min-height:56px; }
+  .tab-btn:focus{ outline:none; }
+  .tab-btn .emoji{ font-size:30px; line-height:1; display:block; pointer-events:none; }
+  .tab-btn .label{ font-size:12px; color:var(--gold2); }
+  .tab-btn.active .emoji{ text-shadow:0 0 10px rgba(255,215,0,0.9); }
+  .tab-btn.active .label{ color:var(--gold1); font-weight:700; }
+  .tab-btn.active{ background:radial-gradient(circle at top, rgba(255,215,0,0.08), transparent); border-radius:12px; }
+
+  @media (max-width:420px){
+    .section-box{ margin:12px 10px; }
+    .promo-input input, .riddle-input input{ width:130px; }
+    .tab-btn .emoji{ font-size:26px; }
+    .tab-btn .label{ font-size:11px; }
+  }
+
+  .ripple{ position:absolute; border-radius:50%; transform:translate(-50%, -50%); pointer-events:none; width:8px; height:8px; background: rgba(255,255,255,0.12); animation:ripple 400ms linear forwards; }
+  @keyframes ripple{ to{ width:120px; height:120px; opacity:0; } }
+  .msg { transition:opacity .25s ease; opacity:1; }
+
+  /* Daily login box */
+  #daily-login-box {
+    background: linear-gradient(135deg,#ffd70022,#d0aa5b22);
+    border:1px solid rgba(255,215,0,0.15);
+    box-shadow: 0 8px 25px rgba(255,215,0,0.25);
+    padding:16px;
+  }
+  #daily-login-btn {
+    width:100%;
+    padding:12px 0;
+    border-radius:12px;
+    background: linear-gradient(180deg,#ffd700,#d0aa5b);
+    border:none;
+    font-weight:600;
+    cursor:pointer;
+    margin-top:6px;
+    color:#111;
+    box-shadow:0 6px 20px rgba(255,215,0,0.5);
+    font-size:16px;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  #daily-login-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(255,215,0,0.8), 0 0 40px rgba(255,215,0,0.4);
+  }
+  .day-cell {
+    width:50px; height:50px; background:#2f2f2f; border-radius:10px;
+    text-align:center; color:#f5f5f5; font-size:12px;
+    display:flex; flex-direction:column; justify-content:center; align-items:center;
+    border:1px solid rgba(255,215,0,0.2); box-shadow: inset 0 0 8px rgba(255,215,0,0.05);
+  }
+  .day-cell.active { background: linear-gradient(180deg,#ffd700,#d0aa5b); color:#111; font-weight:700; border:1px solid #ffd700; box-shadow:0 0 10px rgba(255,215,0,0.7); }
+  .day-cell img { width:18px; margin-bottom:2px; }
+
+/* 💼 Премиальный стиль кошелька */
+.wallet-container {
+  text-align: center;
+  padding: 25px;
+  font-family: 'Poppins', sans-serif;
+  color: #fff;
+}
+
+.wallet-title {
+  font-size: 1.8em;
+  font-weight: 600;
+  margin-bottom: 25px;
+  background: linear-gradient(90deg, #ffd700, #ffcc33);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 15px rgba(255,215,0,0.4);
+}
+
+.wallet-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  align-items: center;
+}
+
+.wallet-card {
+  position: relative;
+  width: 90%;
+  max-width: 420px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 25px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.15);
+  box-shadow: 0 0 25px rgba(255,255,255,0.08);
+  overflow: hidden;
+  transition: 0.3s ease;
+}
+
+.wallet-card::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at top left, rgba(255,255,255,0.1), transparent 60%);
+  transform: rotate(25deg);
+}
+
+.wallet-card:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 0 35px rgba(255,255,255,0.2);
+}
+
+.wallet-icon {
+  width: 60px;
+  height: 60px;
+  z-index: 2;
+}
+
+.wallet-info {
+  text-align: right;
+  z-index: 2;
+}
+
+.wallet-name {
+  display: block;
+  font-size: 1.1em;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.wallet-balance {
+  font-size: 1.6em;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 8px rgba(255,255,255,0.2);
+}
+
+/* Цветовые темы карточек */
+.wallet-card.gold {
+  background: linear-gradient(135deg, #ffeb3b20, #ff980030);
+  border: 1px solid #ffd70060;
+}
+
+.wallet-card.usdt {
+  background: linear-gradient(135deg, #26a17b20, #1e7e6120);
+  border: 1px solid #26a17b60;
+}
+
+.wallet-card.ton {
+  background: linear-gradient(135deg, #0098ea20, #006bbd20);
+  border: 1px solid #0098ea60;
+}
+
+
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="sound-toggle" style="position:fixed;right:12px;top:10px;z-index:300;">
+    <button id="sound-btn" style="background:none;border:none;color:#ffd700;font-size:20px;cursor:pointer;padding:8px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.4);">🔊</button>
+  </div>
+
+  <div class="tabs" id="main-tabs">
+
+    <!-- TAB 1: Главное -->
+    <div id="tab-1" class="tab active">
+      <div class="balance-top">
+        <img src="Coin.png" alt="Coin"><div class="bal" id="coin-balance">0</div>
+        <img src="Toncoin.png" alt="TON"><div class="bal" id="ton-balance">0.00</div>
+        <img src="USDT.png" alt="USDT"><div class="bal" id="usdt-balance">0.00</div>
+      </div>
+
+      <div class="section-box" id="promo-box">
+        <h3>🎁 Промокод</h3>
+        <p>Введите промокод для активации бонуса</p>
+        <div class="promo-input">
+          <input id="promo" placeholder="Введите код">
+          <button id="promo-apply">Применить</button>
+        </div>
+        <div id="promo-message" class="promo-message"></div>
+      </div>
+
+      <div class="section-box" id="ads-box">
+        <h3>📺 Просмотр рекламы</h3>
+        <p>Ежедневно можно просмотреть до <strong>20</strong> реклам. Каждая просмотренная реклама — +1 Coin</p>
+        <button id="watch-ad-btn" class="watch-btn">▶ Смотреть</button>
+        <div id="ads-progress-bar"><div id="ads-progress-bar-inner"></div></div>
+        <p style="text-align:center;color:var(--gold1);margin-top:8px;">Просмотрено: <span id="ads-count">0</span>/20</p>
+      </div>
+
+      <div class="section-box riddle-box" id="riddle-section">
+        <h3>🧩 Загадка дня</h3>
+        <p id="riddle-question">Что имеет ключи, но не может открыть ни одну дверь?</p>
+        <div class="riddle-input">
+          <input id="riddle-answer" placeholder="Ваш ответ">
+          <button id="riddle-btn">Ответить</button>
+        </div>
+        <div id="riddle-msg" style="margin-top:10px;display:none;" class="msg"></div>
+      </div>
+
+      <div class="section-box" id="daily-login-box">
+        <h3>🎉 Ежедневный вход</h3>
+        <p>Смотрите видео и получайте бонусы каждый день!</p>
+
+        <div id="daily-rewards" style="display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin:12px 0;">
+          <!-- 1-4 день -->
+          <div class="day-cell" data-day="1"><img src="coin.png" style="width:18px;"> 1</div>
+          <div class="day-cell" data-day="2"><img src="coin.png" style="width:18px;"> 2</div>
+          <div class="day-cell" data-day="3"><img src="coin.png" style="width:18px;"> 3</div>
+          <div class="day-cell" data-day="4"><img src="coin.png" style="width:18px;"> 4</div>
+          <!-- 5-7 день -->
+          <div class="day-cell" data-day="5"><img src="coin.png" style="width:18px;"> 5</div>
+          <div class="day-cell" data-day="6"><img src="usdt.png" style="width:18px;"> 0.05</div>
+          <div class="day-cell" data-day="7"><img src="Toncoin.png" style="width:18px;"> 0.05</div>
+        </div>
+
+        <button id="daily-login-btn">▶ Смотреть видео и получить бонус</button>
+      </div>
+    </div>
+
+    <!-- TAB 2: Игровой -->
+    <div id="tab-2" class="tab">
+      <div class="section-box"><h3>🎮 Игры</h3><p>Игровой контент здесь.</p></div>
+    </div>
+
+    <!-- TAB 3: Задания -->
+    <div id="tab-3" class="tab">
+      <div class="section-box"><h3>📋 Задания</h3><p>Список заданий.</p></div>
+    </div>
+
+    <!-- TAB 4: Рефералы / Магазин -->
+    <div id="tab-4" class="tab">
+      <div class="section-box"><h3>👥 Рефералы</h3><p>Здесь можно пригласить друзей и получить бонусы.</p></div>
+    </div>
+
+  <!-- 💼 Вкладка "Кошелек" -->
+<div id="tab-5" class="tab">
+  <div class="wallet-container">
+    <h2 class="wallet-title">💼 Ваш кошелек</h2>
+
+<button id="connect-ton-btn" style="margin-top:15px; padding:10px 16px; border:none; border-radius:12px; background:linear-gradient(180deg,#00c8ff,#006bbd); color:#fff; font-weight:600; cursor:pointer;">Подключить TON кошелек</button>
+<p id="ton-wallet-address" style="margin-top:6px; font-size:14px; opacity:0.8;"></p>
+
+    <div class="wallet-grid">
+      <div class="wallet-card gold">
+        <img src="Coin.png" class="wallet-icon" alt="Coin">
+        <div class="wallet-info">
+          <span class="wallet-name">Coins</span>
+          <span class="wallet-balance" id="coinBalance">0</span>
+        </div>
+      </div>
+      <div class="wallet-card usdt">
+        <img src="USDT.png" class="wallet-icon" alt="USDT">
+        <div class="wallet-info">
+          <span class="wallet-name">USDT</span>
+          <span class="wallet-balance" id="usdtBalance">0.00</span>
+        </div>
+      </div>
+      <div class="wallet-card ton">
+        <img src="Toncoin.png" class="wallet-icon" alt="TON">
+        <div class="wallet-info">
+          <span class="wallet-name">TON</span>
+          <span class="wallet-balance" id="tonBalance">0.00</span>
+
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+  
+ </div>
+
+  </div> <!-- /.tabs -->
+
+
+
+  <!-- BOTTOM TABS -->
+  <div class="tab-buttons" aria-hidden="false">
+    <button class="tab-btn active" data-tab="tab-1"><span class="emoji">🏠</span><span class="label">Главная</span></button>
+    <button class="tab-btn" data-tab="tab-2"><span class="emoji">🎮</span><span class="label">Игровой</span></button>
+    <button class="tab-btn" data-tab="tab-3"><span class="emoji">📝</span><span class="label">Задания</span></button>
+    <button class="tab-btn" data-tab="tab-4"><span class="emoji">👥</span><span class="label">Рефералы</span></button>
+    <button class="tab-btn" data-tab="tab-5"><span class="emoji">💼</span><span class="label">Кошелек</span></button>
+  </div>
+
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@tonconnect/sdk@1.0.0/dist/tonconnect.min.js"></script>
+
+<script>
+let tonConnector = null;
+let walletAddress = null;
+
+document.getElementById('connect-ton-btn').addEventListener('click', async () => {
+  try {
+    if (!window.TonConnect) {
+      alert('TonConnect не загружен!');
+      return;
+    }
+
+    if (!tonConnector) {
+     tonConnector = new TonConnect.TonConnect({
+  manifestUrl: 'https://github.com/krab7570510-jpg/ton-mini-app'
+});
+
+ 
+    }
+
+    // Подключаем кошелек
+    const walletInfo = await tonConnector.connect();
+    walletAddress = walletInfo.account.address;
+    document.getElementById('ton-wallet-address').textContent = 'Адрес: ' + walletAddress;
+
+    // Получаем баланс TON
+    const balanceNano = await tonConnector.getAccountBalance(walletAddress);
+    document.getElementById('tonBalance').textContent = (balanceNano / 1_000_000_000).toFixed(4);
+
+    alert('Кошелек подключен!');
+  } catch (e) {
+    console.error('Ошибка подключения:', e);
+    alert('Не удалось подключить кошелек. Проверьте manifest.json и HTTPS.');
+  }
+});
+
+
+/* ===========================
+   Configuration & state
+   =========================== */
+const validPromoCodes = ["PROMO2025","BONUS5","LUCKYDAY","GIFT2025","SUPERCOIN"]; // example server codes
+// rewards for promo: 1 coin, 0.01 TON, 0.01 USDT
+const PROMO_REWARD = { coin:1, ton:0.01, usdt:0.01 };
+
+let coinBalance = parseInt(localStorage.getItem('coinBalance')) || 0;
+let tonBalance = parseFloat(localStorage.getItem('tonBalance')) || 0;
+let usdtBalance = parseFloat(localStorage.getItem('usdtBalance')) || 0;
+
+let adsCount = parseInt(localStorage.getItem('adsCount')) || 0;
+const maxAds = 20;
+
+// riddle: answered flag stored per-day in UTC
+function getUTCDateKey(){
+  const now = new Date();
+  return now.getUTCFullYear() + '-' + String(now.getUTCMonth()+1).padStart(2,'0') + '-' + String(now.getUTCDate()).padStart(2,'0');
+}
+
+/* ===========================
+   Audio (WebAudio synth, offline, light)
+   =========================== */
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+let soundEnabled = true;
+
+function initAudio(){
+  if(audioCtx) return;
+  audioCtx = new AudioCtx();
+
+  // create master gain
+  window.masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.9; // global volume control
+  masterGain.connect(audioCtx.destination);
+
+  // ambient: gentle stereo pad using 2 oscillators and slow LFO -> gain
+  const ambGain = audioCtx.createGain();
+  ambGain.gain.value = 0.04; // very low volume
+  ambGain.connect(masterGain);
+
+  const osc1 = audioCtx.createOscillator();
+  osc1.type = 'sine';
+  osc1.frequency.value = 110; // low note
+  const osc1Gain = audioCtx.createGain(); osc1Gain.gain.value = 0.02;
+  osc1.connect(osc1Gain); osc1Gain.connect(ambGain);
+
+  const osc2 = audioCtx.createOscillator();
+  osc2.type = 'triangle';
+  osc2.frequency.value = 220;
+  const osc2Gain = audioCtx.createGain(); osc2Gain.gain.value = 0.01;
+  osc2.connect(osc2Gain); osc2Gain.connect(ambGain);
+
+  // slow LFO to modulate amplitude
+  const lfo = audioCtx.createOscillator(); lfo.frequency.value = 0.06; // very slow
+  const lfoGain = audioCtx.createGain(); lfoGain.gain.value = 0.02;
+  lfo.connect(lfoGain);
+  lfoGain.connect(osc1Gain.gain);
+  lfoGain.connect(osc2Gain.gain);
+
+  osc1.start(); osc2.start(); lfo.start();
+
+  // short bling sound factory
+  window.playBling = function(){
+    if(!soundEnabled) return;
+    const t = audioCtx.currentTime;
+    const g = audioCtx.createGain(); g.gain.value = 0.001;
+    g.connect(masterGain);
+    // quick FM-ish bling
+    const carrier = audioCtx.createOscillator();
+    carrier.type = 'sine';
+    carrier.frequency.setValueAtTime(900, t);
+    const mod = audioCtx.createOscillator(); mod.frequency.setValueAtTime(20, t);
+    const modGain = audioCtx.createGain(); modGain.gain.setValueAtTime(200, t);
+    mod.connect(modGain); modGain.connect(carrier.frequency);
+    carrier.connect(g);
+    carrier.start(); mod.start();
+    g.gain.linearRampToValueAtTime(0.02, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.6);
+    carrier.stop(t + 0.7); mod.stop(t + 0.7);
+  };
+
+  // click sound for tab
+  window.playClick = function(){
+    if(!soundEnabled) return;
+    const t = audioCtx.currentTime;
+    const g = audioCtx.createGain(); g.gain.value = 0.02; g.connect(masterGain);
+    const o = audioCtx.createOscillator(); o.type = 'triangle'; o.frequency.setValueAtTime(800, t);
+    o.connect(g); o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+    o.stop(t + 0.13);
+  };
+}
+
+/* toggle sound button */
+const soundBtn = document.getElementById('sound-btn');
+soundBtn.addEventListener('click', ()=>{
+  soundEnabled = !soundEnabled;
+  soundBtn.textContent = soundEnabled ? '🔊' : '🔇';
+  if(soundEnabled) {
+    try{ initAudio(); }catch(e){}
+  }
+});
+
+/* init audio on first user interaction to satisfy mobile autoplay policies */
+function ensureAudioStarted(){
+  if(!audioCtx){
+    try{ initAudio(); }catch(e){}
+  }
+}
+['click','touchstart'].forEach(ev=>document.addEventListener(ev, ensureAudioStarted, {once:true}));
+
+/* ===========================
+   Utilities: coin animations for coin/ton/usdt
+   =========================== */
+function createCurrencyAnimation(type, amount){
+  const emojiMap = { coin:'💰', ton:'🪙', usdt:'💵' };
+  const count = Math.min(6, Math.max(1, Math.ceil(amount*2))); // ensure at least 1
+  for(let i=0;i<count;i++){
+    const el = document.createElement('div');
+    el.className = 'fall-coin ' + (type==='ton'?'ton': type==='usdt'?'usdt':'coin');
+    el.textContent = emojiMap[type] || '💰';
+    const left = Math.random()*85 + 5;
+    el.style.left = left + 'vw';
+    el.style.top = '-40px';
+    el.style.fontSize = (18 + Math.random()*18) + 'px';
+    document.body.appendChild(el);
+
+    const duration = 2000 + Math.random()*1200;
+    el.style.transition = `transform ${duration}ms linear, opacity 400ms linear ${duration-400}ms`;
+    requestAnimationFrame(()=> {
+      el.style.transform = `translateY(${window.innerHeight + 120}px) rotate(${(Math.random()*360)}deg)`;
+    });
+
+    el.style.cursor = 'pointer';
+    el.addEventListener('click', ()=>{
+      if(type==='coin'){ coinBalance++; localStorage.setItem('coinBalance', coinBalance); updateAllBalances(); }
+      else if(type==='ton'){ tonBalance = +(tonBalance + 0.01).toFixed(2); localStorage.setItem('tonBalance', tonBalance); updateAllBalances(); }
+      else if(type==='usdt'){ usdtBalance = +(usdtBalance + 0.01).toFixed(2); localStorage.setItem('usdtBalance', usdtBalance); updateAllBalances(); }
+      try{ playBling(); }catch(e){}
+      el.remove();
+    });
+
+    setTimeout(()=>{ try{ el.remove(); }catch(e){} }, duration + 800);
+  }
+}
+
+/* ===========================
+   Balances update
+   =========================== */
+function updateAllBalances(){
+  const cb = coinBalance, tb = tonBalance, ub = usdtBalance;
+  ['','-2','-3','-4','-5'].forEach((s,i)=>{
+    const idc = 'coin-balance' + (s === '' ? '' : s);
+    const idt = 'ton-balance' + (s === '' ? '' : s);
+    const idu = 'usdt-balance' + (s === '' ? '' : s);
+    const elc = document.getElementById(idc);
+    const elt = document.getElementById(idt);
+    const elu = document.getElementById(idu);
+    if(elc) elc.textContent = cb;
+    if(elt) elt.textContent = tb.toFixed(2);
+    if(elu) elu.textContent = ub.toFixed(2);
+  });
+}
+updateAllBalances();
+
+
+
+
+/* ===========================
+   Promo: apply promo -> 1 coin + 0.01 TON + 0.01 USDT
+   =========================== */
+document.getElementById('promo-apply').addEventListener('click', applyPromo);
+function applyPromo(){
+  const code = document.getElementById('promo').value.trim();
+  const msgEl = document.getElementById('promo-message');
+  if(!code){ msgEl.style.display='block'; msgEl.textContent='⚠️ Введите промокод!'; msgEl.style.color='#E53935'; setTimeout(()=>msgEl.style.display='none',2500); return; }
+  if(validPromoCodes.includes(code.toUpperCase())){
+    coinBalance += PROMO_REWARD.coin;
+    tonBalance = +(tonBalance + PROMO_REWARD.ton).toFixed(2);
+    usdtBalance = +(usdtBalance + PROMO_REWARD.usdt).toFixed(2);
+    localStorage.setItem('coinBalance', coinBalance);
+    localStorage.setItem('tonBalance', tonBalance);
+    localStorage.setItem('usdtBalance', usdtBalance);
+    updateAllBalances();
+    msgEl.style.display='block'; msgEl.style.color='#4CAF50';
+    msgEl.textContent = `✅ Промокод успешно! +${PROMO_REWARD.coin} Coin, +${PROMO_REWARD.ton} TON, +${PROMO_REWARD.usdt} USDT`;
+    document.getElementById('promo').value='';
+    createCurrencyAnimation('coin', PROMO_REWARD.coin);
+    createCurrencyAnimation('ton', PROMO_REWARD.ton);
+    createCurrencyAnimation('usdt', PROMO_REWARD.usdt);
+    try{ playBling(); }catch(e){}
+  } else {
+    msgEl.style.display='block'; msgEl.style.color='#E53935';
+    msgEl.textContent = '⚠️ Недействительный промокод!';
+  }
+  setTimeout(()=>{ msgEl.style.display='none'; }, 3000);
+}
+
+/* ===========================
+   Ads: watch ad simulation
+   =========================== */
+const watchBtn = document.getElementById('watch-ad-btn');
+watchBtn.addEventListener('click', ()=> {
+  if(adsCount >= maxAds){ alert('Достигнут лимит 20 просмотров!'); return; }
+  watchBtn.disabled = true;
+  const original = watchBtn.textContent;
+  let countdown = 6; // seconds (short demo)
+  watchBtn.textContent = `Смотрим... ${countdown}s`;
+  const interval = setInterval(()=>{
+    countdown--;
+    if(countdown > 0) watchBtn.textContent = `Смотрим... ${countdown}s`;
+    if(countdown <= 0){
+      clearInterval(interval);
+      adsCount++;
+      coinBalance += 1;
+      localStorage.setItem('coinBalance', coinBalance);
+      localStorage.setItem('adsCount', adsCount);
+      document.getElementById('ads-count').textContent = adsCount;
+      document.getElementById('ads-progress-bar-inner').style.width = (adsCount/maxAds*100) + '%';
+      updateAllBalances();
+      createCurrencyAnimation('coin', 1);
+      try{ playBling(); }catch(e){}
+      watchBtn.disabled = false;
+      watchBtn.textContent = original;
+    }
+  }, 1000);
+});
+
+/* ===========================
+   Riddle: one answer per day (UTC)
+   =========================== */
+const riddleBtn = document.getElementById('riddle-btn');
+riddleBtn.addEventListener('click', checkRiddle);
+function checkRiddle(){
+  const key = 'riddleAnswered_' + getUTCDateKey();
+  if(localStorage.getItem(key) === 'true'){
+    alert('Вы уже отвечали на загадку сегодня!');
+    return;
+  }
+  const ans = (document.getElementById('riddle-answer').value || '').trim().toLowerCase();
+  const msgEl = document.getElementById('riddle-msg');
+  if(ans === '' ){ msgEl.style.display='block'; msgEl.textContent='⚠️ Введите ответ'; msgEl.style.color='#E53935'; setTimeout(()=>msgEl.style.display='none',2000); return; }
+  if(ans.includes('пиани') || ans.includes('piano')){
+    coinBalance += 5;
+    localStorage.setItem('coinBalance', coinBalance);
+    updateAllBalances();
+    localStorage.setItem(key, 'true');
+    msgEl.style.display='block'; msgEl.style.color='#4CAF50'; msgEl.textContent='✅ Правильно! +5 Coin';
+    createCurrencyAnimation('coin', 5);
+    try{ playBling(); }catch(e){}
+  } else {
+    msgEl.style.display='block'; msgEl.style.color='#E53935'; msgEl.textContent='❌ Неправильно, попробуйте снова!';
+  }
+  setTimeout(()=>msgEl.style.display='none',3000);
+}
+
+/* ===========================
+   Tabs switching with click sound & ripple
+   =========================== */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', (e)=>{
+    try{ playClick(); }catch(e){}
+    const r = document.createElement('span');
+    r.className = 'ripple';
+    const rect = btn.getBoundingClientRect();
+    r.style.left = (e.clientX - rect.left) + 'px';
+    r.style.top = (e.clientY - rect.top) + 'px';
+    btn.appendChild(r);
+    setTimeout(()=> r.remove(), 450);
+
+    const id = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    const target = document.getElementById(id);
+    if(target) target.classList.add('active');
+  });
+});
+
+/* ===========================
+   Daily reset in 00:00 UTC for adsCount and riddle
+   =========================== */
+function resetDailyIfNeeded(){
+  const lastReset = localStorage.getItem('lastResetUTC');
+  const todayUTC = getUTCDateKey();
+  if(lastReset !== todayUTC){
+    localStorage.setItem('adsCount', '0');
+    localStorage.setItem('lastResetUTC', todayUTC);
+    adsCount = 0;
+    document.getElementById('ads-count').textContent = adsCount;
+    document.getElementById('ads-progress-bar-inner').style.width = '0%';
+  }
+}
+resetDailyIfNeeded();
+setInterval(resetDailyIfNeeded, 60*1000);
+
+/* ===========================
+   Daily login (streak)
+   =========================== */
+let dailyStreak = parseInt(localStorage.getItem('dailyStreak')) || 0;
+let lastLoginDate = localStorage.getItem('lastLoginDate') || '';
+
+function updateDailyCells(){
+  document.querySelectorAll('.day-cell').forEach(cell=>{
+    const day = parseInt(cell.dataset.day);
+    if(day <= dailyStreak) cell.classList.add('active');
+    else cell.classList.remove('active');
+  });
+}
+updateDailyCells();
+
+document.getElementById('daily-login-btn').addEventListener('click', ()=>{
+  const today = new Date();
+  const todayKey = today.getUTCFullYear()+'-'+String(today.getUTCMonth()+1).padStart(2,'0')+'-'+String(today.getUTCDate()).padStart(2,'0');
+  if(lastLoginDate === todayKey){ alert('Вы уже получили бонус сегодня!'); return; }
+
+  const yesterday = new Date();
+  yesterday.setUTCDate(yesterday.getUTCDate()-1);
+  const yesterdayKey = yesterday.getUTCFullYear()+'-'+String(yesterday.getUTCMonth()+1).padStart(2,'0')+'-'+String(yesterday.getUTCDate()).padStart(2,'0');
+  if(lastLoginDate === yesterdayKey){ dailyStreak++; } else { dailyStreak = 1; }
+  if(dailyStreak > 7) dailyStreak = 1;
+
+  lastLoginDate = todayKey;
+  localStorage.setItem('lastLoginDate', lastLoginDate);
+  localStorage.setItem('dailyStreak', dailyStreak);
+
+  let coinReward=0, tonReward=0, usdtReward=0;
+  switch(dailyStreak){
+    case 1: coinReward=1; break;
+    case 2: coinReward=2; break;
+    case 3: coinReward=3; break;
+    case 4: coinReward=4; break;
+    case 5: coinReward=5; break;
+    case 6: usdtReward=0.05; break;
+    case 7: tonReward=0.05; break;
+  }
+
+  // apply rewards
+  coinBalance += coinReward;
+  tonBalance = +(tonBalance + tonReward).toFixed(2);
+  usdtBalance = +(usdtBalance + usdtReward).toFixed(2);
+  localStorage.setItem('coinBalance', coinBalance);
+  localStorage.setItem('tonBalance', tonBalance);
+  localStorage.setItem('usdtBalance', usdtBalance);
+  updateAllBalances();
+
+  updateDailyCells();
+  if(coinReward) createCurrencyAnimation('coin', coinReward);
+  if(tonReward) createCurrencyAnimation('ton', tonReward);
+  if(usdtReward) createCurrencyAnimation('usdt', usdtReward);
+  try{ playBling(); }catch(e){}
+
+});
+
+/* ===========================
+   Restore adsCount from storage on load
+   =========================== */
+document.addEventListener('DOMContentLoaded', ()=>{
+  adsCount = parseInt(localStorage.getItem('adsCount')) || 0;
+  document.getElementById('ads-count').textContent = adsCount;
+  document.getElementById('ads-progress-bar-inner').style.width = (adsCount/maxAds*100) + '%';
+});
+
+/* Ensure balances reflect initial state */
+updateAllBalances();
+
+function updateAllBalances(){
+  const cb = coinBalance, tb = tonBalance, ub = usdtBalance;
+
+  // верхние балансы
+  const topCoin = document.getElementById('coin-balance');
+  const topTon = document.getElementById('ton-balance');
+  const topUsdt = document.getElementById('usdt-balance');
+  if(topCoin) topCoin.textContent = cb;
+  if(topTon) topTon.textContent = tb.toFixed(2);
+  if(topUsdt) topUsdt.textContent = ub.toFixed(2);
+
+  // кошелек
+  const wCoin = document.getElementById('coinBalance');
+  const wTon = document.getElementById('tonBalance');
+  const wUsdt = document.getElementById('usdtBalance');
+  if(wCoin) wCoin.textContent = cb;
+  if(wTon) wTon.textContent = tb.toFixed(2);
+  if(wUsdt) wUsdt.textContent = ub.toFixed(2);
+}
+
+ 
+
+</script>
+</body>
+</html>
